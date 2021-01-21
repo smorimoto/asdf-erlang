@@ -1,0 +1,36 @@
+name: Main workflow
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: 0 0 * * 5
+
+jobs:
+  plugin_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Install system packages on Ubuntu
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get install fop xsltproc
+
+      - name: Install system packages on macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install autoconf wxmac
+
+      - name: Test plugin
+        uses: asdf-vm/actions/plugin-test@v1
+        with:
+          command:
+            erl -eval '{ok, Version} =
+            file:read_file(filename:join([code:root_dir(), "releases",
+            erlang:system_info(otp_release), "OTP_VERSION"])),
+            io:fwrite(Version), halt().' -noshell
